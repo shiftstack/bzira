@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+
+issue_get() {
+	local issue_id="$1"
+
+	curl -sS \
+		-X GET \
+		-H "Cookie: ${cookie}" \
+		"${base_url}/issue/${issue_id}"
+	}
+
+issue_create() {
+	curl -sS \
+		-X POST \
+		-H "Cookie: ${cookie}" \
+		-H 'Content-Type: application/json' \
+		-d@- \
+		"${base_url}/issue" < "${filename:-/dev/stdin}"
+}
+
+issue_tosprint() {
+	local issue_id="$1"
+	local sprint_id="$2"
+
+	curl -isS \
+		-X POST \
+		-H "Cookie: ${cookie}" \
+		-H 'Content-Type: application/json' \
+		-d "{ \"issues\": [ \"${issue_id}\" ] }" \
+		"${agile_base_url}/sprint/${sprint_id}/issue"
+}
+
+handle_issue() {
+	case $1 in
+		get)
+			shift
+			issue_get "$@"
+			;;
+
+		create)
+			shift
+			issue_create "$@"
+			;;
+
+		tosprint)
+			shift
+			issue_tosprint "$@"
+			;;
+
+		*)
+			unrecognised_command "$@"
+	esac
+}
+
+sprint_current() {
+	curl -sS \
+		-X GET \
+		-H "Cookie: ${cookie}" \
+		"${agile_base_url}/board/${board:-$default_board}/sprint?state=active"
+	}
+
+handle_sprint() {
+	case $1 in
+		current)
+			shift
+			sprint_current "$@"
+			;;
+
+		*)
+			unrecognised_command "$@"
+	esac
+}
+
+new_bz() {
+	local bz_id="$1"
+
+	current_sprint=$(sprint_current | jq '.values[0].id')
+
+	issue_payload=$(mktemp)
+
+	cat <<EOF > "$issue_payload"
+{
+  "fields": {
+    "project": {
+      "id": "$project"
+    },
+    "summary": "BZ-${bz_id}",
+    "issuetype": {
+      "id": "10103"
+    },
+    "assignee": {
+      "name": "$username"
+    },
+    "reporter": {
+      "name": "$username"
+    },
+    "description": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
+    "components": [
+      {
+        "id": "15800"
+      }
+    ]
+  }
+}
+EOF
+
+	issue_key="$(issue_create < "$issue_payload" | jq -r '.key')"
+	echo "Created new issue: ${issue_key}"
+	echo "adding to sprint: ${current_sprint}"
+	issue_tosprint "$issue_key" "$current_sprint" && \
+		echo "New issue added to sprint ${current_sprint}"
+}
+
+print_help() {
+	echo -e "Add a new Jira card in the sprint for a Bugzilla bug."
+	echo -e "Required configuration:"
+	echo -e "JIRA_COOKIE (or flag --cookie): In the form 'JSESSIONID=123456789'."
+	echo -e "JIRA_USERNAME (or flag --username): Your Kerberos ID, without the '@redhat.com' part."
+	echo
+	echo -e "Use:"
+	echo -e "\t${0} bz 123"
+}
+
+validate_configuration() {
+	declare -a required_values=("cookie" "username")
+	local fail
+
+	for val in "${required_values[@]}"; do
+		local required=${!val}
+		if [ -z "${required}" ]; then
+			echo "Required variable '${val}' not found."
+			fail='yes'
+		fi
+	done
+
+	if ! [ -z $fail ]; then
+		exit 1
+	fi
+}
+
+# Set default configuration
+default_workspace='jira.coreos.com'
+default_board='361'
+default_project='14101'
+
+# Apply environment variables to configuration
+workspace="${JIRA_WORKSPACE:-$default_workspace}"
+project="${JIRA_PROJECT:-$default_project}"
+board="${JIRA_BOARD:-$default_board}"
+cookie="${JIRA_COOKIE}"
+username="${JIRA_USERNAME}"
+
+# Apply flags overrides to configuration
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-c|--cookie)
+			cookie=$2
+			shift 2
+			;;
+
+		-f|--filename)
+			filename=$2
+			shift 2
+			;;
+
+		-w|--workspace)
+			workspace=$2
+			shift 2
+			;;
+
+		-b|--board)
+			board=$2
+			shift 2
+			;;
+
+		-u|--username)
+			username=$2
+			shift 2
+			;;
+
+		-h|--help|help)
+			print_help
+			exit 0
+			;;
+
+		*)
+			break
+			;;
+	esac
+done
+
+validate_configuration
+
+base_url="https://${workspace:-$default_workspace}/rest/api/2"
+agile_base_url="https://${workspace:-$default_workspace}/rest/agile/1.0"
+cookie="${cookie:-$JIRA_COOKIE}"
+
+# Process subcommands
+case $1 in
+	issue|i)
+		shift
+		handle_issue "$@"
+		;;
+
+	sprint|s)
+		shift
+		handle_sprint "$@"
+		;;
+
+	bugzilla|bz)
+		shift
+		new_bz "$@"
+		;;
+
+	help)
+		print_help
+		exit 0
+		;;
+
+	*)
+		unrecognised_command "$@"
+esac
