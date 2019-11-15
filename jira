@@ -193,7 +193,6 @@ validate_configuration
 
 base_url="https://${workspace:-$default_workspace}/rest/api/2"
 agile_base_url="https://${workspace:-$default_workspace}/rest/agile/1.0"
-cookie="${cookie:-$JIRA_COOKIE}"
 
 # Process subcommands
 case $1 in
