@@ -10,14 +10,14 @@ issue_get() {
 
 	curl -sS \
 		-X GET \
-		-H "Cookie: JSESSIONID=${jsessionid}" \
+		-u "${jira_username}:${jira_password}" \
 		"${jira_base_url}/issue/${issue_id}"
 	}
 
 issue_create() {
 	curl -sS \
 		-X POST \
-		-H "Cookie: JSESSIONID=${jsessionid}" \
+		-u "${jira_username}:${jira_password}" \
 		-H 'Content-Type: application/json' \
 		-d@- \
 		"${jira_base_url}/issue" < "${filename:-/dev/stdin}"
@@ -29,7 +29,7 @@ issue_tosprint() {
 
 	curl -isS \
 		-X POST \
-		-H "Cookie: JSESSIONID=${jsessionid}" \
+		-u "${jira_username}:${jira_password}" \
 		-H 'Content-Type: application/json' \
 		-d "{ \"issues\": [ \"${issue_id}\" ] }" \
 		"${jira_agile_base_url}/sprint/${sprint_id}/issue"
@@ -47,7 +47,7 @@ handle_issue() {
 sprint_get() {
 	curl -sS \
 		-X GET \
-		-H "Cookie: JSESSIONID=${jsessionid}" \
+		-u "${jira_username}:${jira_password}" \
 		"${jira_agile_base_url}/board/${jira_board:-$default_jira_board}/sprint?state=active"
 	}
 
@@ -137,8 +137,8 @@ print_help() {
 	echo
 	echo -e "Required configuration:"
 	echo
-	echo -e "JIRA_USERNAME (or flag -u): Your Kerberos ID, without the '@redhat.com' part."
-	echo -e "JIRA_JSESSIONID (or flag -p): Look into your browser's cookies."
+	echo -e "JIRA_USERNAME (or flag -u): Your JBoss username."
+	echo -e "JIRA_PASSWORD (or flag -p): Your Red Hat password."
 	echo
 	echo -e "Use:"
 	echo -e "\t${0} bz [-s] <bz_id>..."
@@ -147,7 +147,7 @@ print_help() {
 }
 
 validate_configuration() {
-	declare -a required_values=("jsessionid" "jira_username")
+	declare -a required_values=("jira_username" "jira_password")
 	local fail
 
 	for val in "${required_values[@]}"; do
@@ -164,24 +164,24 @@ validate_configuration() {
 }
 
 # Set default configuration
-default_jira_workspace='jira.coreos.com'
-default_jira_board='361'
-default_jira_project='14101'
-default_jira_component='15800'
+default_jira_workspace='issues.jboss.org'
+#TODO: default_jira_board='361'
+#TODO: default_jira_project='14101'
+#TODO: default_jira_component='15800'
 
 # Apply environment variables to configuration
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
 jira_project="${JIRA_PROJECT:-$default_jira_project}"
 jira_board="${JIRA_BOARD:-$default_jira_board}"
-jsessionid="${JIRA_JSESSIONID}"
 jira_username="${JIRA_USERNAME}"
+jira_password="${JIRA_PASSWORD}"
 jira_component="${JIRA_COMPONENT:-$default_jira_component}"
 
 # Apply flags overrides to configuration
 while getopts u:p:w:b:f:h o; do
 	case "$o" in
 		u) jira_username="$OPTARG"  ;;
-		p) jsessionid="$OPTARG"     ;;
+		p) jira_password="$OPTARG"  ;;
 		w) jira_workspace="$OPTARG" ;;
 		b) jira_board="$OPTARG"     ;;
 		c) jira_component="$OPTARG" ;;
