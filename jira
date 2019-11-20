@@ -37,23 +37,10 @@ issue_tosprint() {
 
 handle_issue() {
 	case $1 in
-		get)
-			shift
-			issue_get "$@"
-			;;
-
-		create)
-			shift
-			issue_create "$@"
-			;;
-
-		tosprint)
-			shift
-			issue_tosprint "$@"
-			;;
-
-		*)
-			unrecognised_command "$@"
+		get)      shift; issue_get "$@"      ;;
+		create)   shift; issue_create "$@"   ;;
+		tosprint) shift; issue_tosprint "$@" ;;
+		*)        unrecognised_command "$@"  ;;
 	esac
 }
 
@@ -66,13 +53,8 @@ sprint_get() {
 
 handle_sprint() {
 	case $1 in
-		get)
-			shift
-			sprint_get "$@"
-			;;
-
-		*)
-			unrecognised_command "$@"
+		get) shift; sprint_get "$@"    ;;
+		*)   unrecognised_command "$@" ;;
 	esac
 }
 
@@ -194,13 +176,9 @@ jira_agile_base_url="https://${jira_workspace:-$default_jira_workspace}/rest/agi
 
 # Process subcommands
 case ${@:$OPTIND:1} in
-	issue|i) handle_issue "${@:$(($OPTIND+1))}" ;;
-
-	sprint|s) handle_sprint "${@:$(($OPTIND+1))}" ;;
-
-	bugzilla|bz) new_bzs "${@:$(($OPTIND+1))}" ;;
-
-	help) print_help; exit 0 ;;
-
-	*) unrecognised_command "${@:$(($OPTIND+1))}"
+	issue|i)     handle_issue "${@:$(($OPTIND+1))}"         ;;
+	sprint|s)    handle_sprint "${@:$(($OPTIND+1))}"        ;;
+	bugzilla|bz) new_bzs "${@:$(($OPTIND+1))}"              ;;
+	help)        print_help; exit 0                         ;;
+	*)           unrecognised_command "${@:$(($OPTIND+1))}" ;;
 esac
