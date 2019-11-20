@@ -57,7 +57,7 @@ handle_issue() {
 	esac
 }
 
-sprint_current() {
+sprint_get() {
 	curl -sS \
 		-X GET \
 		-H "Cookie: JSESSIONID=${jsessionid}" \
@@ -66,9 +66,9 @@ sprint_current() {
 
 handle_sprint() {
 	case $1 in
-		current)
+		get)
 			shift
-			sprint_current "$@"
+			sprint_get "$@"
 			;;
 
 		*)
@@ -78,10 +78,7 @@ handle_sprint() {
 
 new_bz() {
 	local bz_id="$1"
-
-	current_sprint=$(sprint_current | jq '.values[0].id')
-
-	issue_payload=$(mktemp)
+	local issue_payload=$(mktemp)
 
 	cat <<EOF > "$issue_payload"
 {
@@ -106,11 +103,30 @@ new_bz() {
 }
 EOF
 
-	issue_key="$(issue_create < "$issue_payload" | jq -r '.key')"
-	echo "Created new issue: ${issue_key}"
-	echo "adding to sprint: ${current_sprint}"
-	issue_tosprint "$issue_key" "$current_sprint" && \
-		echo "New issue added to sprint ${current_sprint}"
+	issue_create < "$issue_payload"
+}
+
+new_bzs() {
+	while getopts s o; do
+		case "$o" in
+			s) to_sprint=true ;;
+		esac
+	done
+
+	local current_sprint=$(sprint_get | jq '.values[0].id')
+
+
+	for bz_id in ${@:$OPTIND}; do
+		local issue="$(mktemp)"
+
+		new_bz "$bz_id" > "$issue"
+
+		if [ "$to_sprint" = true ]; then
+			issue_tosprint "$(jq -r '.key' "$issue")" "$current_sprint"
+		else
+			cat "$issue"
+		fi
+	done
 }
 
 print_help() {
@@ -122,7 +138,9 @@ print_help() {
 	echo -e "JIRA_JSESSIONID (or flag -p): Look into your browser's cookies."
 	echo
 	echo -e "Use:"
-	echo -e "\t${0} bz 123"
+	echo -e "\t${0} bz [-s] <bz_id>..."
+	echo
+	echo -e "\t-s\t add the Jira card to the current sprint."
 }
 
 validate_configuration() {
@@ -177,7 +195,7 @@ case ${@:$OPTIND:1} in
 
 	sprint|s) handle_sprint "${@:$(($OPTIND+1))}" ;;
 
-	bugzilla|bz) new_bz "${@:$(($OPTIND+1))}" ;;
+	bugzilla|bz) new_bzs "${@:$(($OPTIND+1))}" ;;
 
 	help) print_help; exit 0 ;;
 

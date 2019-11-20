@@ -10,15 +10,22 @@ Add a new Jira card for a Bugzilla bug.
 
 ## Use
 ```
-./jira bz <bz_id>
+./jira bz [-s] <bz_id>...
 ```
+
+`-s`: add the Jira card to the current sprint.
+
 
 ## Examples
 
-This command will create a Jira card with summary `BZ-123`, with the link to the BZ in the description:
+This command will create Jira cards for Bugzillas 1, 2 and 3:
 
 ```
-./jira bz 123
+./jira bz 1 2 3
 ```
 
+This command will create Jira cards for Bugzillas 1, 2 and 3 and add them to the current sprint:
 
+```
+./jira -s bz 1 2 3
+```
