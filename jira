@@ -58,9 +58,19 @@ handle_sprint() {
 	esac
 }
 
-new_bz() {
+bz_get() {
+	local bz_id="$1"
+
+	curl -sS \
+		-X GET \
+		"https://bugzilla.redhat.com/rest/bug/${bz_id}"
+}
+
+bz_tojira() {
 	local bz_id="$1"
 	local issue_payload=$(mktemp)
+
+	bz_summary="$(bz_get "$bz_id" | jq -r '.bugs[0].summary')"
 
 	cat <<EOF > "$issue_payload"
 {
@@ -68,7 +78,7 @@ new_bz() {
     "project": {
       "id": "$jira_project"
     },
-    "summary": "Bug ${bz_id}",
+    "summary": "Bug ${bz_id}: ${bz_summary}",
     "issuetype": {
       "id": "10103"
     },
@@ -88,7 +98,7 @@ EOF
 	issue_create < "$issue_payload"
 }
 
-new_bzs() {
+bzs_tojira() {
 	while getopts s o; do
 		case "$o" in
 			s) to_sprint=true ;;
@@ -101,7 +111,7 @@ new_bzs() {
 	for bz_id in ${@:$OPTIND}; do
 		local issue="$(mktemp)"
 
-		new_bz "$bz_id" > "$issue"
+		bz_tojira "$bz_id" > "$issue"
 
 		if [ "$to_sprint" = true ]; then
 			issue_tosprint "$(jq -r '.key' "$issue")" "$current_sprint"
@@ -109,6 +119,14 @@ new_bzs() {
 			cat "$issue"
 		fi
 	done
+}
+
+handle_bz() {
+	case $1 in
+		get) shift; bz_get "$@"        ;;
+		new) shift; bzs_tojira "$@"    ;;
+		*)   unrecognised_command "$@" ;;
+	esac
 }
 
 print_help() {
@@ -178,7 +196,7 @@ jira_agile_base_url="https://${jira_workspace:-$default_jira_workspace}/rest/agi
 case ${@:$OPTIND:1} in
 	issue|i)     handle_issue "${@:$(($OPTIND+1))}"         ;;
 	sprint|s)    handle_sprint "${@:$(($OPTIND+1))}"        ;;
-	bugzilla|bz) new_bzs "${@:$(($OPTIND+1))}"              ;;
+	bugzilla|bz) handle_bz "${@:$(($OPTIND+1))}"            ;;
 	help)        print_help; exit 0                         ;;
 	*)           unrecognised_command "${@:$(($OPTIND+1))}" ;;
 esac
