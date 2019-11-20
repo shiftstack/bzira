@@ -93,9 +93,6 @@ new_bz() {
     "issuetype": {
       "id": "10103"
     },
-    "assignee": {
-      "name": "$username"
-    },
     "reporter": {
       "name": "$username"
     },
