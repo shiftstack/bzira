@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+unrecognised_command() {
+	echo "Unrecognised command: $@"
+	exit 1
+}
+
 issue_get() {
 	local issue_id="$1"
 
