@@ -68,7 +68,7 @@ new_bz() {
     "project": {
       "id": "$jira_project"
     },
-    "summary": "BZ-${bz_id}",
+    "summary": "Bug ${bz_id}",
     "issuetype": {
       "id": "10103"
     },
