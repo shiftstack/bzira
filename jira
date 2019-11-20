@@ -5,14 +5,14 @@ issue_get() {
 
 	curl -sS \
 		-X GET \
-		-H "Cookie: ${cookie}" \
+		-H "Cookie: JSESSIONID=${jsessionid}" \
 		"${base_url}/issue/${issue_id}"
 	}
 
 issue_create() {
 	curl -sS \
 		-X POST \
-		-H "Cookie: ${cookie}" \
+		-H "Cookie: JSESSIONID=${jsessionid}" \
 		-H 'Content-Type: application/json' \
 		-d@- \
 		"${base_url}/issue" < "${filename:-/dev/stdin}"
@@ -24,7 +24,7 @@ issue_tosprint() {
 
 	curl -isS \
 		-X POST \
-		-H "Cookie: ${cookie}" \
+		-H "Cookie: JSESSIONID=${jsessionid}" \
 		-H 'Content-Type: application/json' \
 		-d "{ \"issues\": [ \"${issue_id}\" ] }" \
 		"${agile_base_url}/sprint/${sprint_id}/issue"
@@ -55,7 +55,7 @@ handle_issue() {
 sprint_current() {
 	curl -sS \
 		-X GET \
-		-H "Cookie: ${cookie}" \
+		-H "Cookie: JSESSIONID=${jsessionid}" \
 		"${agile_base_url}/board/${board:-$default_board}/sprint?state=active"
 	}
 
@@ -113,16 +113,18 @@ EOF
 
 print_help() {
 	echo -e "Add a new Jira card in the sprint for a Bugzilla bug."
+	echo
 	echo -e "Required configuration:"
-	echo -e "JIRA_COOKIE (or flag --cookie): In the form 'JSESSIONID=123456789'."
-	echo -e "JIRA_USERNAME (or flag --username): Your Kerberos ID, without the '@redhat.com' part."
+	echo
+	echo -e "JIRA_USERNAME (or flag -u): Your Kerberos ID, without the '@redhat.com' part."
+	echo -e "JIRA_JSESSIONID (or flag -p): Look into your browser's cookies."
 	echo
 	echo -e "Use:"
 	echo -e "\t${0} bz 123"
 }
 
 validate_configuration() {
-	declare -a required_values=("cookie" "username")
+	declare -a required_values=("jsessionid" "username")
 	local fail
 
 	for val in "${required_values[@]}"; do
@@ -147,45 +149,18 @@ default_project='14101'
 workspace="${JIRA_WORKSPACE:-$default_workspace}"
 project="${JIRA_PROJECT:-$default_project}"
 board="${JIRA_BOARD:-$default_board}"
-cookie="${JIRA_COOKIE}"
+jsessionid="${JIRA_JSESSIONID}"
 username="${JIRA_USERNAME}"
 
 # Apply flags overrides to configuration
-while [[ $# -gt 0 ]]; do
-	case "$1" in
-		-c|--cookie)
-			cookie=$2
-			shift 2
-			;;
-
-		-f|--filename)
-			filename=$2
-			shift 2
-			;;
-
-		-w|--workspace)
-			workspace=$2
-			shift 2
-			;;
-
-		-b|--board)
-			board=$2
-			shift 2
-			;;
-
-		-u|--username)
-			username=$2
-			shift 2
-			;;
-
-		-h|--help|help)
-			print_help
-			exit 0
-			;;
-
-		*)
-			break
-			;;
+while getopts u:p:w:b:f:h o; do
+	case "$o" in
+		u) username="$OPTARG"   ;;
+		p) jsessionid="$OPTARG" ;;
+		w) workspace="$OPTARG"  ;;
+		b) board="$OPTARG"      ;;
+		f) filename="$OPTARG"   ;;
+		h) print_help; exit 0   ;;
 	esac
 done
 
@@ -195,27 +170,14 @@ base_url="https://${workspace:-$default_workspace}/rest/api/2"
 agile_base_url="https://${workspace:-$default_workspace}/rest/agile/1.0"
 
 # Process subcommands
-case $1 in
-	issue|i)
-		shift
-		handle_issue "$@"
-		;;
+case ${@:$OPTIND:1} in
+	issue|i) handle_issue "${@:$(($OPTIND+1))}" ;;
 
-	sprint|s)
-		shift
-		handle_sprint "$@"
-		;;
+	sprint|s) handle_sprint "${@:$(($OPTIND+1))}" ;;
 
-	bugzilla|bz)
-		shift
-		new_bz "$@"
-		;;
+	bugzilla|bz) new_bz "${@:$(($OPTIND+1))}" ;;
 
-	help)
-		print_help
-		exit 0
-		;;
+	help) print_help; exit 0 ;;
 
-	*)
-		unrecognised_command "$@"
+	*) unrecognised_command "${@:$(($OPTIND+1))}"
 esac
