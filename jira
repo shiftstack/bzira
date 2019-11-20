@@ -11,7 +11,7 @@ issue_get() {
 	curl -sS \
 		-X GET \
 		-H "Cookie: JSESSIONID=${jsessionid}" \
-		"${base_url}/issue/${issue_id}"
+		"${jira_base_url}/issue/${issue_id}"
 	}
 
 issue_create() {
@@ -20,7 +20,7 @@ issue_create() {
 		-H "Cookie: JSESSIONID=${jsessionid}" \
 		-H 'Content-Type: application/json' \
 		-d@- \
-		"${base_url}/issue" < "${filename:-/dev/stdin}"
+		"${jira_base_url}/issue" < "${filename:-/dev/stdin}"
 }
 
 issue_tosprint() {
@@ -32,7 +32,7 @@ issue_tosprint() {
 		-H "Cookie: JSESSIONID=${jsessionid}" \
 		-H 'Content-Type: application/json' \
 		-d "{ \"issues\": [ \"${issue_id}\" ] }" \
-		"${agile_base_url}/sprint/${sprint_id}/issue"
+		"${jira_agile_base_url}/sprint/${sprint_id}/issue"
 }
 
 handle_issue() {
@@ -61,7 +61,7 @@ sprint_get() {
 	curl -sS \
 		-X GET \
 		-H "Cookie: JSESSIONID=${jsessionid}" \
-		"${agile_base_url}/board/${board:-$default_board}/sprint?state=active"
+		"${jira_agile_base_url}/board/${jira_board:-$default_jira_board}/sprint?state=active"
 	}
 
 handle_sprint() {
@@ -84,14 +84,14 @@ new_bz() {
 {
   "fields": {
     "project": {
-      "id": "$project"
+      "id": "$jira_project"
     },
     "summary": "BZ-${bz_id}",
     "issuetype": {
       "id": "10103"
     },
     "reporter": {
-      "name": "$username"
+      "name": "$jira_username"
     },
     "description": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
     "components": [
@@ -144,7 +144,7 @@ print_help() {
 }
 
 validate_configuration() {
-	declare -a required_values=("jsessionid" "username")
+	declare -a required_values=("jsessionid" "jira_username")
 	local fail
 
 	for val in "${required_values[@]}"; do
@@ -161,33 +161,33 @@ validate_configuration() {
 }
 
 # Set default configuration
-default_workspace='jira.coreos.com'
-default_board='361'
-default_project='14101'
+default_jira_workspace='jira.coreos.com'
+default_jira_board='361'
+default_jira_project='14101'
 
 # Apply environment variables to configuration
-workspace="${JIRA_WORKSPACE:-$default_workspace}"
-project="${JIRA_PROJECT:-$default_project}"
-board="${JIRA_BOARD:-$default_board}"
+jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
+jira_project="${JIRA_PROJECT:-$default_jira_project}"
+jira_board="${JIRA_BOARD:-$default_jira_board}"
 jsessionid="${JIRA_JSESSIONID}"
-username="${JIRA_USERNAME}"
+jira_username="${JIRA_USERNAME}"
 
 # Apply flags overrides to configuration
 while getopts u:p:w:b:f:h o; do
 	case "$o" in
-		u) username="$OPTARG"   ;;
-		p) jsessionid="$OPTARG" ;;
-		w) workspace="$OPTARG"  ;;
-		b) board="$OPTARG"      ;;
-		f) filename="$OPTARG"   ;;
-		h) print_help; exit 0   ;;
+		u) jira_username="$OPTARG"  ;;
+		p) jsessionid="$OPTARG"     ;;
+		w) jira_workspace="$OPTARG" ;;
+		b) jira_board="$OPTARG"     ;;
+		f) filename="$OPTARG"       ;;
+		h) print_help; exit 0       ;;
 	esac
 done
 
 validate_configuration
 
-base_url="https://${workspace:-$default_workspace}/rest/api/2"
-agile_base_url="https://${workspace:-$default_workspace}/rest/agile/1.0"
+jira_base_url="https://${jira_workspace:-$default_jira_workspace}/rest/api/2"
+jira_agile_base_url="https://${jira_workspace:-$default_jira_workspace}/rest/agile/1.0"
 
 # Process subcommands
 case ${@:$OPTIND:1} in
