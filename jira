@@ -96,7 +96,7 @@ new_bz() {
     "description": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
     "components": [
       {
-        "id": "15800"
+        "id": "$jira_component"
       }
     ]
   }
@@ -164,6 +164,7 @@ validate_configuration() {
 default_jira_workspace='jira.coreos.com'
 default_jira_board='361'
 default_jira_project='14101'
+default_jira_component='15800'
 
 # Apply environment variables to configuration
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
@@ -171,6 +172,7 @@ jira_project="${JIRA_PROJECT:-$default_jira_project}"
 jira_board="${JIRA_BOARD:-$default_jira_board}"
 jsessionid="${JIRA_JSESSIONID}"
 jira_username="${JIRA_USERNAME}"
+jira_component="${JIRA_COMPONENT:-$default_jira_component}"
 
 # Apply flags overrides to configuration
 while getopts u:p:w:b:f:h o; do
@@ -179,6 +181,7 @@ while getopts u:p:w:b:f:h o; do
 		p) jsessionid="$OPTARG"     ;;
 		w) jira_workspace="$OPTARG" ;;
 		b) jira_board="$OPTARG"     ;;
+		c) jira_component="$OPTARG" ;;
 		f) filename="$OPTARG"       ;;
 		h) print_help; exit 0       ;;
 	esac
