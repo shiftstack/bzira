@@ -67,8 +67,17 @@ bz_get() {
 }
 
 bz_tojira() {
+	local assignee
+
+	while getopts a: o; do
+		case "$o" in
+			a) assignee="$OPTARG" ;;
+		esac
+	done
+	shift "$((OPTIND-1))"
+
 	local bz_id="$1"
-	local issue_payload=$(mktemp)
+	local issue_payload="$(mktemp)"
 
 	bz_summary="$(bz_get "$bz_id" | jq -r '.bugs[0].summary')"
 
@@ -95,13 +104,21 @@ bz_tojira() {
 }
 EOF
 
+	if [ -n "$assignee" ]; then
+		local with_assignee="$(mktemp)"
+		jq -c ".fields.assignee += {\"name\":\"$assignee\"}" "$issue_payload" > "$with_assignee"
+		issue_payload="$with_assignee"
+	fi
+
 	issue_create < "$issue_payload"
 }
 
 bzs_tojira() {
-	while getopts s o; do
+	local options
+	while getopts sa: o; do
 		case "$o" in
-			s) to_sprint=true ;;
+			s) to_sprint=true       ;;
+			a) options="-a $OPTARG" ;;
 		esac
 	done
 
@@ -111,7 +128,7 @@ bzs_tojira() {
 	for bz_id in ${@:$OPTIND}; do
 		local issue="$(mktemp)"
 
-		bz_tojira "$bz_id" > "$issue"
+		bz_tojira $options "$bz_id" > "$issue"
 
 		if [ "$to_sprint" = true ]; then
 			issue_tosprint "$(jq -r '.key' "$issue")" "$current_sprint"
