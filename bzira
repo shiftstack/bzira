@@ -73,7 +73,7 @@ bz_tojira() {
 	local bz_payload="$(mktemp)"
 
 	bz_get "$bz_id" > "$bz_payload"
-	local bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload")"
+	local bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
 
 	cat <<EOF > "$issue_payload"
 {
