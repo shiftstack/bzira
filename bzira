@@ -165,7 +165,7 @@ validate_configuration() {
 
 # Set default configuration
 default_jira_workspace='issues.redhat.com'
-default_jira_board='5304'
+default_jira_board='5266'
 default_jira_project='12323208'
 default_jira_component='12333963'
 
