@@ -7,8 +7,8 @@ Add a new Jira card for a Bugzilla bug.
 
 
 ## Configuration
-* `JIRA_USERNAME`   (or flag `-u`): Your Kerberos ID, without the '@redhat.com' part.
-* `JIRA_JSESSIONID` (or flag `-p`): Look into your browser's cookies..
+* environment variable `JIRA_USERNAME` (or flag `-u`): Your Red Hat account username
+* environment variable `JIRA_PASSWORD` (or flag `-p`): Your Red Hat password
 
 
 ## Use
