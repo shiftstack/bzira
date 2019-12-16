@@ -164,10 +164,10 @@ validate_configuration() {
 }
 
 # Set default configuration
-default_jira_workspace='issues.jboss.org'
-#TODO: default_jira_board='361'
-#TODO: default_jira_project='14101'
-#TODO: default_jira_component='15800'
+default_jira_workspace='issues.redhat.com'
+default_jira_board='5304'
+default_jira_project='12323208'
+default_jira_component='12333963'
 
 # Apply environment variables to configuration
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
