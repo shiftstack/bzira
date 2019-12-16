@@ -141,7 +141,7 @@ print_help() {
 	echo -e "JIRA_PASSWORD (or flag -p): Your Red Hat password."
 	echo
 	echo -e "Use:"
-	echo -e "\t${0} bz [-s] <bz_id>..."
+	echo -e "\t${0} bz new [-s] <bz_id>..."
 	echo
 	echo -e "\t-s\t add the Jira card to the current sprint."
 }
