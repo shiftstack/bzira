@@ -83,7 +83,7 @@ bz_tojira() {
     },
     "summary": "Bug ${bz_id}: ${bz_summary}",
     "issuetype": {
-      "id": "10103"
+      "id": "1"
     },
     "reporter": {
       "name": "$jira_username"
