@@ -137,7 +137,7 @@ print_help() {
 	echo
 	echo -e "Required configuration:"
 	echo
-	echo -e "JIRA_USERNAME (or flag -u): Your JBoss username."
+	echo -e "JIRA_USERNAME (or flag -u): Your Red Hat account username."
 	echo -e "JIRA_PASSWORD (or flag -p): Your Red Hat password."
 	echo
 	echo -e "Use:"
