@@ -7,17 +7,33 @@ unrecognised_command() {
 	exit 1
 }
 
+curl_check() {
+	declare response_body
+	response_body="$(mktemp)"
+	declare -i status_code expected_status_code="$1"
+	shift
+
+	status_code="$(curl -sS -o "$response_body" -w '%{http_code}' "$@")"
+
+	if [[ "$status_code" -ne "$expected_status_code" ]]; then
+		>&2 echo "Unexpected status code $status_code (expected $expected_status_code)"
+		exit 2
+	fi
+
+	cat "$response_body"
+}
+
 issue_get() {
 	declare issue_id="$1"
 
-	curl -sS \
+	curl_check 200 \
 		-X GET \
 		-u "${jira_username}:${jira_password}" \
 		"${jira_base_url}/issue/${issue_id}"
-	}
+}
 
 issue_create() {
-	curl -sS \
+	curl_check 201 \
 		-X POST \
 		-u "${jira_username}:${jira_password}" \
 		-H 'Content-Type: application/json' \
@@ -29,7 +45,7 @@ issue_tosprint() {
 	declare issue_id="$1"
 	declare sprint_id="$2"
 
-	curl -isS \
+	curl_check 204 \
 		-X POST \
 		-u "${jira_username}:${jira_password}" \
 		-H 'Content-Type: application/json' \
@@ -47,7 +63,7 @@ handle_issue() {
 }
 
 sprint_get() {
-	curl -sS \
+	curl_check 200 \
 		-X GET \
 		-u "${jira_username}:${jira_password}" \
 		"${jira_agile_base_url}/board/${jira_board:-$default_jira_board}/sprint?state=active"
@@ -63,7 +79,7 @@ handle_sprint() {
 bz_get() {
 	declare bz_id="$1"
 
-	curl -sS \
+	curl_check 200 \
 		-X GET \
 		"https://bugzilla.redhat.com/rest/bug/${bz_id}"
 }
