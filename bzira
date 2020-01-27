@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -Eeuo pipefail
+
 unrecognised_command() {
 	echo "Unrecognised command: $*"
 	exit 1
@@ -103,6 +105,8 @@ EOF
 }
 
 bzs_tojira() {
+	declare to_sprint=false
+
 	while getopts s o; do
 		case "$o" in
 			s) to_sprint=true     ;;
@@ -152,17 +156,17 @@ print_help() {
 
 validate_configuration() {
 	declare -a required_values=("jira_username" "jira_password")
-	declare fail
+	declare fail=false
 
 	for val in "${required_values[@]}"; do
 		declare required=${!val}
 		if [ -z "${required}" ]; then
 			echo "Required variable '${val}' not found."
-			fail='yes'
+			fail=true
 		fi
 	done
 
-	if [ -n "$fail" ]; then
+	if [ "$fail" = true ]; then
 		exit 1
 	fi
 }
