@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/shiftstack/bzira.svg?branch=master)](https://travis-ci.com/shiftstack/bzira)
 # jira
 Add a new Jira card for a Bugzilla bug.
 
