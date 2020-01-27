@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 unrecognised_command() {
-	echo "Unrecognised command: $@"
+	echo "Unrecognised command: $*"
 	exit 1
 }
 
 issue_get() {
-	local issue_id="$1"
+	declare issue_id="$1"
 
 	curl -sS \
 		-X GET \
@@ -24,8 +24,8 @@ issue_create() {
 }
 
 issue_tosprint() {
-	local issue_id="$1"
-	local sprint_id="$2"
+	declare issue_id="$1"
+	declare sprint_id="$2"
 
 	curl -isS \
 		-X POST \
@@ -59,7 +59,7 @@ handle_sprint() {
 }
 
 bz_get() {
-	local bz_id="$1"
+	declare bz_id="$1"
 
 	curl -sS \
 		-X GET \
@@ -67,13 +67,14 @@ bz_get() {
 }
 
 bz_tojira() {
-	local bz_id="$1"
-	local issue_payload=$(mktemp)
+	declare bz_id="$1"
+	declare issue_payload bz_payload bz_summary
 
-	local bz_payload="$(mktemp)"
+	issue_payload=$(mktemp)
+	bz_payload="$(mktemp)"
 
 	bz_get "$bz_id" > "$bz_payload"
-	local bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
+	bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
 
 	cat <<EOF > "$issue_payload"
 {
@@ -104,15 +105,18 @@ EOF
 bzs_tojira() {
 	while getopts s o; do
 		case "$o" in
-			s) to_sprint=true ;;
+			s) to_sprint=true     ;;
+			*) print_help; exit 1 ;;
 		esac
 	done
 
-	local current_sprint=$(sprint_get | jq '.values[0].id')
+	declare current_sprint
+	current_sprint="$(sprint_get | jq '.values[0].id')"
 
 
-	for bz_id in ${@:$OPTIND}; do
-		local issue="$(mktemp)"
+	for bz_id in "${@:$OPTIND}"; do
+		declare issue
+		issue="$(mktemp)"
 
 		bz_tojira "$bz_id" > "$issue"
 
@@ -148,17 +152,17 @@ print_help() {
 
 validate_configuration() {
 	declare -a required_values=("jira_username" "jira_password")
-	local fail
+	declare fail
 
 	for val in "${required_values[@]}"; do
-		local required=${!val}
+		declare required=${!val}
 		if [ -z "${required}" ]; then
 			echo "Required variable '${val}' not found."
 			fail='yes'
 		fi
 	done
 
-	if ! [ -z $fail ]; then
+	if [ -n "$fail" ]; then
 		exit 1
 	fi
 }
@@ -173,12 +177,14 @@ default_jira_component='12333963'
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
 jira_project="${JIRA_PROJECT:-$default_jira_project}"
 jira_board="${JIRA_BOARD:-$default_jira_board}"
+# shellcheck disable=SC2153
 jira_username="${JIRA_USERNAME}"
+# shellcheck disable=SC2153
 jira_password="${JIRA_PASSWORD}"
 jira_component="${JIRA_COMPONENT:-$default_jira_component}"
 
 # Apply flags overrides to configuration
-while getopts u:p:w:b:f:h o; do
+while getopts u:p:w:b:c:f:h o; do
 	case "$o" in
 		u) jira_username="$OPTARG"  ;;
 		p) jira_password="$OPTARG"  ;;
@@ -187,6 +193,7 @@ while getopts u:p:w:b:f:h o; do
 		c) jira_component="$OPTARG" ;;
 		f) filename="$OPTARG"       ;;
 		h) print_help; exit 0       ;;
+		*) print_help; exit 1       ;;
 	esac
 done
 
@@ -197,9 +204,9 @@ jira_agile_base_url="https://${jira_workspace:-$default_jira_workspace}/rest/agi
 
 # Process subcommands
 case ${@:$OPTIND:1} in
-	issue|i)     handle_issue "${@:$(($OPTIND+1))}"         ;;
-	sprint|s)    handle_sprint "${@:$(($OPTIND+1))}"        ;;
-	bugzilla|bz) handle_bz "${@:$(($OPTIND+1))}"            ;;
+	issue|i)     handle_issue "${@:$((OPTIND+1))}"         ;;
+	sprint|s)    handle_sprint "${@:$((OPTIND+1))}"        ;;
+	bugzilla|bz) handle_bz "${@:$((OPTIND+1))}"            ;;
 	help)        print_help; exit 0                         ;;
-	*)           unrecognised_command "${@:$(($OPTIND+1))}" ;;
+	*)           unrecognised_command "${@:$((OPTIND+1))}" ;;
 esac
