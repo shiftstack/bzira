@@ -7,8 +7,8 @@ Add a new Jira card for a Bugzilla bug.
 
 
 ## Configuration
-* environment variable `JIRA_USERNAME` (or flag `-u`): Your Red Hat account username
-* environment variable `JIRA_PASSWORD` (or flag `-p`): Your Red Hat password
+* environment variable `JIRA_USERNAME` (or flag `-u`): Your Jira username as found in your [Jira profile](https://issues.redhat.com/secure/ViewProfile.jspa)
+* environment variable `JIRA_PASSWORD` (or flag `-p`): Your Red Hat developer account password
 
 
 ## Use
