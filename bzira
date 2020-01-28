@@ -142,9 +142,9 @@ bzs_tojira() {
 
 		if [ "$to_sprint" = true ]; then
 			issue_tosprint "$(jq -r '.key' "$issue")" "$current_sprint"
-		else
-			cat "$issue"
 		fi
+
+		cat "$issue"
 	done
 }
 
