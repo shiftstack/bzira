@@ -41,6 +41,17 @@ issue_create() {
 		"${jira_base_url}/issue" < "${filename:-/dev/stdin}"
 }
 
+issue_remotelink_create() {
+	declare issue_id="$1"
+
+	curl_check 201 \
+		-X POST \
+		-u "${jira_username}:${jira_password}" \
+		-H 'Content-Type: application/json' \
+		-d@- \
+		"${jira_base_url}/issue/${issue_id}/remotelink" < "${filename:-/dev/stdin}"
+}
+
 issue_tosprint() {
 	declare issue_id="$1"
 	declare sprint_id="$2"
@@ -86,10 +97,18 @@ bz_get() {
 
 bz_tojira() {
 	declare bz_id="$1"
-	declare issue_payload bz_payload bz_summary
+	declare \
+		issue_payload \
+		issue_remotelink_payload \
+		bz_payload \
+		bz_summary \
+		issue_response_payload \
+		issue_id
 
 	issue_payload=$(mktemp)
+	issue_remotelink_payload=$(mktemp)
 	bz_payload="$(mktemp)"
+	issue_response_payload="$(mktemp)"
 
 	bz_get "$bz_id" > "$bz_payload"
 	bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
@@ -107,7 +126,6 @@ bz_tojira() {
     "reporter": {
       "name": "$jira_username"
     },
-    "description": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
     "components": [
       {
         "id": "$jira_component"
@@ -117,7 +135,24 @@ bz_tojira() {
 }
 EOF
 
-	issue_create < "$issue_payload"
+	cat <<EOF > "$issue_remotelink_payload"
+{
+    "relationship": "Bugzilla",
+    "object": {
+        "title": "Bug ${bz_id}",
+	"summary": "${bz_summary}",
+        "url": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
+	"icon": {
+          "url16x16": "https://bugzilla.redhat.com/extensions/RedHat/web/css/favicons/production.ico"
+}
+    }
+}
+EOF
+
+	issue_create < "$issue_payload" | tee "$issue_response_payload"
+
+	issue_id="$(jq -r '.key' "$issue_response_payload")"
+	issue_remotelink_create "$issue_id" < "$issue_remotelink_payload" > /dev/null
 }
 
 bzs_tojira() {
