@@ -91,15 +91,16 @@ issue_link_pr() {
 
 	cat <<EOF > "$pr_remotelink_payload"
 {
-    "relationship": "Github Pull Request",
-    "object": {
-        "title": "${pr_base_repo_fullname}#${pr_number}",
-	"summary": "${pr_title}",
-        "url": "${pr_url}",
-	"icon": {
-          "url16x16": "https://github.githubassets.com/favicon.ico"
-        }
-    }
+	"relationship": "Github Pull Request",
+	"object":
+	{
+		"title": "${pr_base_repo_fullname}#${pr_number}",
+		"summary": "${pr_title}",
+		"url": "${pr_url}",
+		"icon": {
+			"url16x16": "https://github.githubassets.com/favicon.ico"
+		}
+	}
 }
 EOF
 
@@ -158,37 +159,44 @@ bz_tojira() {
 
 	cat <<EOF > "$issue_payload"
 {
-  "fields": {
-    "project": {
-      "id": "$jira_project"
-    },
-    "summary": "Bug ${bz_id}: ${bz_summary}",
-    "issuetype": {
-      "id": "1"
-    },
-    "reporter": {
-      "name": "$jira_username"
-    },
-    "components": [
-      {
-        "id": "$jira_component"
-      }
-    ]
-  }
+	"fields":
+	{
+		"project":
+		{
+			"id": "$jira_project"
+		},
+		"summary": "Bug ${bz_id}: ${bz_summary}",
+		"issuetype":
+		{
+			"id": "1"
+		},
+		"reporter":
+		{
+			"name": "$jira_username"
+		},
+		"components":
+		[
+			{
+				"id": "$jira_component"
+			}
+		]
+	}
 }
 EOF
 
 	cat <<EOF > "$issue_remotelink_payload"
 {
-    "relationship": "Bugzilla",
-    "object": {
-        "title": "Bug ${bz_id}",
-	"summary": "${bz_summary}",
-        "url": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
-	"icon": {
-          "url16x16": "https://bugzilla.redhat.com/extensions/RedHat/web/css/favicons/production.ico"
-}
-    }
+	"relationship": "Bugzilla",
+	"object":
+	{
+		"title": "Bug ${bz_id}",
+		"summary": "${bz_summary}",
+		"url": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
+		"icon":
+		{
+			"url16x16": "https://bugzilla.redhat.com/extensions/RedHat/web/css/favicons/production.ico"
+		}
+	}
 }
 EOF
 
