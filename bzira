@@ -64,11 +64,54 @@ issue_tosprint() {
 		"${jira_agile_base_url}/sprint/${sprint_id}/issue"
 }
 
+issue_link_pr() {
+	declare \
+		issue_key="$1" \
+		pr_url="$2" \
+		pr_remotelink_payload \
+		pr_payload \
+		pr_api_url \
+		pr_title \
+		pr_base_repo_fullname \
+		pr_number
+	pr_remotelink_payload="$(mktemp)"
+	pr_payload="$(mktemp)"
+
+	pr_api_url="${pr_url/github.com/api.github.com\/repos}"
+	pr_api_url="${pr_api_url/pull/pulls}"
+
+	curl_check 200 \
+		-X GET \
+		-H 'Accept: application/vnd.github.v3+json' \
+		"$pr_api_url" > "$pr_payload"
+
+	pr_title="$(jq -r '.title' "$pr_payload")"
+	pr_base_repo_fullname="$(jq -r '.base.repo.full_name' "$pr_payload")"
+	pr_number="$(jq -r '.number' "$pr_payload")"
+
+	cat <<EOF > "$pr_remotelink_payload"
+{
+    "relationship": "Github Pull Request",
+    "object": {
+        "title": "${pr_base_repo_fullname}#${pr_number}",
+	"summary": "${pr_title}",
+        "url": "${pr_url}",
+	"icon": {
+          "url16x16": "https://github.githubassets.com/favicon.ico"
+        }
+    }
+}
+EOF
+
+	issue_remotelink_create "$issue_key" < "$pr_remotelink_payload" > /dev/null
+}
+
 handle_issue() {
 	case $1 in
 		get)      shift; issue_get "$@"      ;;
 		create)   shift; issue_create "$@"   ;;
 		tosprint) shift; issue_tosprint "$@" ;;
+		pr)       shift; issue_link_pr "$@"  ;;
 		*)        unrecognised_command "$@"  ;;
 	esac
 }
