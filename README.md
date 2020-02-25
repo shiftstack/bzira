@@ -46,3 +46,15 @@ Example:
 ```
 ./bzira issue pr OSASINFRA-1015 'https://github.com/openshift/installer/pull/3128'
 ```
+
+### Add a Bugzilla link to a Jira card
+
+```
+./bzira issue bz <issue_key> <bz_id>
+```
+
+Example:
+
+```
+./bzira issue bz OSASINFRA-1315 1804083
+```

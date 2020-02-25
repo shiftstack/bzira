@@ -107,12 +107,49 @@ EOF
 	issue_remotelink_create "$issue_key" < "$pr_remotelink_payload" > /dev/null
 }
 
+issue_link_bz() {
+	declare \
+		issue_key="$1" \
+		bz_id="$2" \
+		bz_summary="${3:-}" \
+		bz_remotelink_payload \
+		bz_payload
+
+	if [[ -z $bz_summary ]]; then
+		bz_payload="$(mktemp)"
+
+		bz_get "$bz_id" > "$bz_payload"
+		bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
+	fi
+
+	bz_remotelink_payload="$(mktemp)"
+
+	cat <<EOF > "$bz_remotelink_payload"
+{
+	"relationship": "Bugzilla",
+	"object":
+	{
+		"title": "Bug ${bz_id}",
+		"summary": "${bz_summary}",
+		"url": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
+		"icon":
+		{
+			"url16x16": "https://bugzilla.redhat.com/extensions/RedHat/web/css/favicons/production.ico"
+		}
+	}
+}
+EOF
+
+	issue_remotelink_create "$issue_key" < "$bz_remotelink_payload" > /dev/null
+}
+
 handle_issue() {
 	case $1 in
 		get)      shift; issue_get "$@"      ;;
 		create)   shift; issue_create "$@"   ;;
 		tosprint) shift; issue_tosprint "$@" ;;
 		pr)       shift; issue_link_pr "$@"  ;;
+		bz)       shift; issue_link_bz "$@"  ;;
 		*)        unrecognised_command "$@"  ;;
 	esac
 }
@@ -143,16 +180,14 @@ bz_tojira() {
 	declare bz_id="$1"
 	declare \
 		issue_payload \
-		issue_remotelink_payload \
 		bz_payload \
 		bz_summary \
 		issue_response_payload \
-		issue_id
+		issue_key
 
 	issue_payload=$(mktemp)
-	issue_remotelink_payload=$(mktemp)
-	bz_payload="$(mktemp)"
 	issue_response_payload="$(mktemp)"
+	bz_payload="$(mktemp)"
 
 	bz_get "$bz_id" > "$bz_payload"
 	bz_summary="$(jq -r '.bugs[0].summary' "$bz_payload" | sed $'s|"|\'|g')"
@@ -184,26 +219,10 @@ bz_tojira() {
 }
 EOF
 
-	cat <<EOF > "$issue_remotelink_payload"
-{
-	"relationship": "Bugzilla",
-	"object":
-	{
-		"title": "Bug ${bz_id}",
-		"summary": "${bz_summary}",
-		"url": "https://bugzilla.redhat.com/show_bug.cgi?id=${bz_id}",
-		"icon":
-		{
-			"url16x16": "https://bugzilla.redhat.com/extensions/RedHat/web/css/favicons/production.ico"
-		}
-	}
-}
-EOF
-
 	issue_create < "$issue_payload" | tee "$issue_response_payload"
 
-	issue_id="$(jq -r '.key' "$issue_response_payload")"
-	issue_remotelink_create "$issue_id" < "$issue_remotelink_payload" > /dev/null
+	issue_key="$(jq -r '.key' "$issue_response_payload")"
+	issue_link_bz "$issue_key" "$bz_id" "$bz_summary"
 }
 
 bzs_tojira() {
