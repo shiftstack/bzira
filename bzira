@@ -317,10 +317,8 @@ default_jira_component='12333963'
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
 jira_project="${JIRA_PROJECT:-$default_jira_project}"
 jira_board="${JIRA_BOARD:-$default_jira_board}"
-# shellcheck disable=SC2153
-jira_username="${JIRA_USERNAME}"
-# shellcheck disable=SC2153
-jira_password="${JIRA_PASSWORD}"
+jira_username="${JIRA_USERNAME-x}"
+jira_password="${JIRA_PASSWORD-x}"
 jira_component="${JIRA_COMPONENT:-$default_jira_component}"
 
 # Apply flags overrides to configuration
