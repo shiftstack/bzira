@@ -240,6 +240,7 @@ EOF
 }
 
 bzs_tojira() {
+	declare OPTIND
 	declare to_sprint=false
 
 	while getopts s o; do
