@@ -313,6 +313,12 @@ default_jira_board='5266'
 default_jira_project='12323208'
 default_jira_component='12333963'
 
+config_file="${XDG_CONFIG_HOME:-${HOME}/.config}/bzira/config"
+if [[ -f "$config_file" ]]; then
+	# shellcheck disable=SC1090
+	source "$config_file"
+fi
+
 # Apply environment variables to configuration
 jira_workspace="${JIRA_WORKSPACE:-$default_jira_workspace}"
 jira_project="${JIRA_PROJECT:-$default_jira_project}"

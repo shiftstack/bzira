@@ -8,10 +8,44 @@ Add a new Jira card for a Bugzilla bug.
 
 
 ## Configuration
+
+There are three ways for passing the Jira credentials to bzira:
+* a configuration file
+* environment variables
+* command-line flags
+
+Note on password complexity: **This tool authenticates against the Jira instance using Basic Auth, which [does not support non US-ASCII characters](https://tools.ietf.org/html/rfc7617#page-8)**.
+
+### Configuration file
+
+Bzira will source a file named `$XDG_CONFIG_HOME/bzira/config` or `$HOME/.config/bzira/config` if it exists. This file can be used to inject credentials in the environment.
+
+Example:
+
+```plaintext
+# ${HOME}/.config/bzira/config
+JIRA_USERNAME=username
+JIRA_PASSWORD=password
+```
+
+Or:
+
+```plaintext
+# ${HOME}/.config/bzira/config
+JIRA_USERNAME=username
+JIRA_PASSWORD="$(pass show jira)"
+```
+
+### Environment variables
+
 * environment variable `JIRA_USERNAME` (or flag `-u`): Your Jira username as found in your [Jira profile](https://issues.redhat.com/secure/ViewProfile.jspa)
 * environment variable `JIRA_PASSWORD` (or flag `-p`): Your Red Hat developer account password
 
-Note on password complexity: **This tool authenticates against the Jira instance using Basic Auth, which [does not support non US-ASCII characters](https://tools.ietf.org/html/rfc7617#page-8)**.
+### Command-line flags
+
+```shell
+bzira -u <jira_username> -p <password> issue get OSASINFRA-42
+```
 
 ## Use
 
