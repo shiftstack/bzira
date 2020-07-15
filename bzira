@@ -286,6 +286,7 @@ print_help() {
 	echo
 	echo -e "Use:"
 	echo -e "\t${0} bz new [-s] <bz_id>..."
+	echo -e "\t${0} issue pr <jira_id> <gh_pr>"
 	echo
 	echo -e "\t-s\t add the Jira card to the current sprint."
 }
