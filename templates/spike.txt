@@ -1,0 +1,14 @@
+title: Spike
+---
+Describe:
+
+* The target use case(s)
+* The user-facing changes
+* A high-level view of the required changes
+* What software parts we need to change (repositories, functional parts)
+* How to test the feature
+* Possible interactions with the usual critical junctions: self-signed certs, customer-provided networks, baremetal workers, scale-out, upgrades, restricted-network install.
+
+Expected outcome:
+* A document detailing the above
+* Jira cards in the epic detailing the required work

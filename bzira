@@ -37,6 +37,34 @@ curl_check() {
 	cat "$response_body"
 }
 
+template_property() {
+	declare -r \
+		f="$1" \
+		property="$2"
+
+	sed -n '1,/^---$/p' "$f" \
+		| sed -n "s|^${property}: ||p"
+}
+
+template_body() {
+	declare -r \
+		f="$1"
+
+	sed '1,/^---$/d' "$f"
+}
+
+get_template() {
+	declare -r \
+		filename="templates/${1}.txt" \
+		requested_part="$2"
+
+	if [[ "$requested_part" == "body" ]]; then
+		template_body "$filename"
+	else
+		template_property "$filename" "$requested_part"
+	fi
+}
+
 issue_get() {
 	declare issue_id="$1"
 
@@ -157,14 +185,113 @@ EOF
 	issue_remotelink_create "$issue_key" < "$bz_remotelink_payload" > /dev/null
 }
 
+issue_add_kreview() {
+	declare \
+		epic_link="$1" \
+		issue_payload \
+		issue_title \
+		issue_description \
+		issue_response_payload \
+		issue_key
+
+	issue_title="$(get_template kuryr_review title)"
+	issue_description="$(get_template kuryr_review body | jq --slurp --raw-input)"
+
+	issue_payload=$(mktemp)
+	issue_response_payload="$(mktemp)"
+
+	cat <<EOF > "$issue_payload"
+{
+	"fields":
+	{
+		"project":
+		{
+			"id": "${jira_project}"
+		},
+		"summary": "${issue_title}",
+		"issuetype":
+		{
+			"name": "Task"
+		},
+		"description": ${issue_description},
+		"customfield_12311140": "${epic_link}",
+		"reporter":
+		{
+			"name": "$jira_username"
+		},
+		"components":
+		[
+			{
+				"id": "$jira_component"
+			},
+			{
+				"id": "$jira_component_kuryr"
+			}
+		]
+	}
+}
+EOF
+
+	issue_create < "$issue_payload" | tee "$issue_response_payload"
+}
+
+issue_add_spike() {
+	declare \
+		epic_link="$1" \
+		issue_payload \
+		issue_title \
+		issue_description \
+		issue_response_payload \
+		issue_key
+
+	issue_title="$(get_template spike title)"
+	issue_description="$(get_template spike body | jq --slurp --raw-input)"
+
+	issue_payload=$(mktemp)
+	issue_response_payload="$(mktemp)"
+
+	cat <<EOF > "$issue_payload"
+{
+	"fields":
+	{
+		"project":
+		{
+			"id": "${jira_project}"
+		},
+		"summary": "${issue_title}",
+		"issuetype":
+		{
+			"name": "Task"
+		},
+		"description": ${issue_description},
+		"customfield_12311140": "${epic_link}",
+		"reporter":
+		{
+			"name": "$jira_username"
+		},
+		"components":
+		[
+			{
+				"id": "$jira_component"
+			}
+		]
+	}
+}
+EOF
+
+	issue_create < "$issue_payload" | tee "$issue_response_payload"
+}
+
 handle_issue() {
 	case $1 in
-		get)      shift; issue_get "$@"      ;;
-		create)   shift; issue_create "$@"   ;;
-		tosprint) shift; issue_tosprint "$@" ;;
-		pr)       shift; issue_link_pr "$@"  ;;
-		bz)       shift; issue_link_bz "$@"  ;;
-		*)        unrecognised_command "$@"  ;;
+		get)          shift; issue_get "$@"         ;;
+		create)       shift; issue_create "$@"      ;;
+		tosprint)     shift; issue_tosprint "$@"    ;;
+		pr)           shift; issue_link_pr "$@"     ;;
+		bz)           shift; issue_link_bz "$@"     ;;
+		spike)        shift; issue_add_spike "$@"   ;;
+		kuryr-review) shift; issue_add_kreview "$@" ;;
+		*)            unrecognised_command "$@"     ;;
 	esac
 }
 
@@ -327,6 +454,7 @@ jira_board="${JIRA_BOARD:-$default_jira_board}"
 jira_username="${JIRA_USERNAME-x}"
 jira_password="${JIRA_PASSWORD-x}"
 jira_component="${JIRA_COMPONENT:-$default_jira_component}"
+jira_component_kuryr='12333964'
 
 # Apply flags overrides to configuration
 while getopts u:p:w:b:c:f:h o; do
