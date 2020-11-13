@@ -1,0 +1,11 @@
+title: Kuryr review
+---
+Please assess:
+
+A. Will the planned ShiftStack implementation cause regressions on clusters running on Kuryr?
+
+B. Does this feature need additional work to function on clusters running on Kuryr?
+
+Please add your considerations as comments below, and move this card to "Code Review" once the assessment is complete.
+
+Please move this card to "Done" once all the corrective actions are complete (e.g. once a new Jira card has been created for each suggested action).

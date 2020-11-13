@@ -92,3 +92,15 @@ Example:
 ```
 ./bzira issue bz OSASINFRA-1315 1804083
 ```
+
+### Add a Spike task to an Epic
+
+```
+./bzira issue spike <issue_key>
+```
+
+### Add a Kuryr review task to an Epic
+
+```
+./bzira issue kuryr-review <issue_key>
+```
